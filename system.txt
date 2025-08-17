@@ -1,0 +1,107 @@
+import React, { useState } from "react";
+
+export default function App() {
+  // Example resume dataset
+  const [resumes, setResumes] = useState([
+    {
+      id: 1,
+      name: "Alice Tan",
+      education: "Bachelor in Computer Science",
+      experience: 3,
+      skills: ["JavaScript", "React", "Python"],
+    },
+    {
+      id: 2,
+      name: "Bob Lee",
+      education: "Diploma in IT",
+      experience: 1,
+      skills: ["HTML", "CSS"],
+    },
+    {
+      id: 3,
+      name: "Charlie Wong",
+      education: "Master in AI",
+      experience: 5,
+      skills: ["Python", "Machine Learning", "React"],
+    },
+  ]);
+
+  const [filtered, setFiltered] = useState([]);
+  const [priority, setPriority] = useState("experience");
+  const [ratings, setRatings] = useState([]);
+
+  // 1. Filter resumes by basic requirements
+  const filterResumes = () => {
+    const result = resumes.filter(
+      (r) => r.experience >= 2 && r.skills.includes("React")
+    );
+    setFiltered(result);
+  };
+
+  // 2. Abstract details
+  const abstractDetails = (resume) => {
+    return `${resume.name} - ${resume.education} - ${resume.experience} yrs exp.`;
+  };
+
+  // 3. Analyse + give rating
+  const analyseResumes = () => {
+    const result = filtered.map((r) => {
+      let score = 0;
+      if (priority === "experience") score = r.experience * 10;
+      if (priority === "education")
+        score =
+          r.education.includes("Master") || r.education.includes("Bachelor")
+            ? 80
+            : 50;
+      if (priority === "skills") score = r.skills.length * 15;
+
+      return { ...r, rating: score };
+    });
+    setRatings(result.sort((a, b) => b.rating - a.rating));
+  };
+
+  return (
+    <div style={{ fontFamily: "Arial", padding: "20px" }}>
+      <h1>Resume Screening System</h1>
+
+      {/* Step 1: Filtering */}
+      <button onClick={filterResumes}>Filter Resumes</button>
+      <h2>Filtered Resumes</h2>
+      {filtered.length === 0 ? (
+        <p>No resumes filtered yet</p>
+      ) : (
+        <ul>
+          {filtered.map((r) => (
+            <li key={r.id}>{abstractDetails(r)}</li>
+          ))}
+        </ul>
+      )}
+
+      {/* Step 2: Priority Selection */}
+      <h2>Choose Priority for Analysis</h2>
+      <select
+        value={priority}
+        onChange={(e) => setPriority(e.target.value)}
+      >
+        <option value="experience">Experience</option>
+        <option value="education">Education</option>
+        <option value="skills">Skills</option>
+      </select>
+
+      {/* Step 3: Analyse */}
+      <button onClick={analyseResumes}>Analyse & Rate</button>
+      <h2>Ratings</h2>
+      {ratings.length === 0 ? (
+        <p>No analysis yet</p>
+      ) : (
+        <ol>
+          {ratings.map((r) => (
+            <li key={r.id}>
+              {r.name} - Rating: {r.rating}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
