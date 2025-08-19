@@ -1,16 +1,310 @@
 import React, { useMemo, useRef, useState } from "react";
 
-// Single-file React app — no external libraries.
-// Beautiful UI via modern CSS (no Tailwind, no frameworks).
-// Features:
-// 1) Load resumes (paste JSON or upload .json/.csv)
-// 2) Filter by basic requirements
-// 3) Choose analysis priorities (weights) + keyword boosts
-// 4) Score, sort, compare, and print clean summaries
-
-const EDU_ORDER = { "High School": 0, Diploma: 1, Bachelor: 2, Master: 3, PhD: 4 };
+/* =========================================================
+   AUTH + ONBOARDING WRAPPER (ADDED) — original screener kept intact
+   Roles:
+     - new/new123  -> Onboarding pages only
+     - user/user123 -> Simple user home (no screener access)
+     - hr/hr123    -> Full access to Resume Screener
+   ========================================================= */
 
 export default function App() {
+  // ---------- Global styles reused across wrapper + screener ----------
+  const baseCSS = `
+    :root { --c:#0f172a; --b:#fff; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; --accent2:#0ea5e9; }
+    body { color: var(--c); background: var(--b); }
+    h2 { margin: 0 0 8px; font-size: 18px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom: 6px; }
+    input, select, textarea { padding: 10px; border:1px solid var(--line); border-radius: 12px; outline: none; width: 100%; background: #fff; transition: box-shadow .2s, border-color .2s; }
+    input[type=checkbox] { width: auto; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(14,165,233,0.15); }
+    table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    table thead th { background: #f8fafc; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color:#334155 }
+    .btn { background: var(--c); color: white; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: transform .05s ease, filter .15s ease; }
+    .btn:hover { filter: brightness(0.95); }
+    .btn:active { transform: translateY(1px); }
+    .btn.ghost { background: #fff; color: var(--c); border: 1px solid var(--line); }
+    .muted { color: var(--muted); }
+    .file { display:inline-flex; align-items:center; gap:8px; border:1px dashed var(--line); padding:10px 14px; border-radius:12px; cursor:pointer; }
+    .file input { display:none; }
+  `;
+
+  // ---------- Auth ----------
+  const ACCOUNTS = {
+    new:  { username: "new",  password: "new123" },
+    user: { username: "user", password: "user123" },
+    hr:   { username: "hr",   password: "hr123"  },
+  };
+
+  const [auth, setAuth] = useState({ loggedIn: false, role: "", who: "" });
+  const [loginU, setLoginU] = useState("");
+  const [loginP, setLoginP] = useState("");
+
+  function tryLogin() {
+    const matched =
+      (loginU === ACCOUNTS.new.username  && loginP === ACCOUNTS.new.password  && "new")  ||
+      (loginU === ACCOUNTS.user.username && loginP === ACCOUNTS.user.password && "user") ||
+      (loginU === ACCOUNTS.hr.username   && loginP === ACCOUNTS.hr.password   && "hr")   ||
+      "";
+    if (!matched) return alert("Invalid username or password.");
+    setAuth({ loggedIn: true, role: matched, who: loginU });
+  }
+  function logout() {
+    setAuth({ loggedIn: false, role: "", who: "" });
+    setLoginU(""); setLoginP("");
+    setOnbComplete(false);
+  }
+
+  // ---------- Onboarding (new users only) ----------
+  const EDUCATION_LEVELS = ["High School","Diploma","Bachelor","Master","PhD"];
+  const MENTORS = [
+    { name: "Dr. Sarah Tan", email: "sarah.tan@company.com", dept: "AI & SWE" },
+    { name: "Jason Lim",     email: "jason.lim@company.com", dept: "Frontend" },
+    { name: "Divya Nair",    email: "divya.nair@company.com", dept: "QA/Automation" },
+    { name: "Ben Tan",       email: "ben.tan@company.com", dept: "Platform" },
+  ];
+
+  const [onb, setOnb] = useState({
+    // Personal
+    fullName: "", personalEmail: "", phone: "", address: "", dob: "",
+    // Employment
+    positionTitle: "", department: "", startDate: "", employmentType: "Full-time", managerName: "",
+    educationHighest: "", skills: "",
+    // Payroll / Compliance
+    bankName: "", bankAccount: "", taxId: "",
+    // Emergency
+    emName: "", emRelation: "", emPhone: "",
+    // Preferences
+    tshirt: "M", dietary: "",
+    // Gmail creation
+    preferredUsername: "", preferredPassword: "",
+  });
+  const [onbComplete, setOnbComplete] = useState(false);
+  const [assignedMentor, setAssignedMentor] = useState(null);
+  const [createdEmail, setCreatedEmail] = useState("");
+
+  function sanitizeUsername(u) {
+    return (u || "").trim().toLowerCase().replace(/\s+/g, ".");
+  }
+  function validateOnboarding() {
+    const req = [
+      ["fullName", "Full Name"],
+      ["personalEmail", "Personal Email"],
+      ["phone", "Phone"],
+      ["positionTitle", "Position Title"],
+      ["department", "Department"],
+      ["startDate", "Start Date"],
+      ["preferredUsername", "Preferred Gmail Username"],
+      ["preferredPassword", "Preferred Gmail Password"],
+      ["emName", "Emergency Contact Name"],
+      ["emPhone", "Emergency Contact Phone"],
+    ];
+    const missing = req.filter(([k]) => !String(onb[k]).trim());
+    if (missing.length) {
+      alert("Please fill required fields:\n- " + missing.map(([,n]) => n).join("\n- "));
+      return false;
+    }
+    if (onb.preferredPassword.length < 6) {
+      alert("Preferred Gmail Password must be at least 6 characters.");
+      return false;
+    }
+    return true;
+  }
+  function submitOnboarding() {
+    if (!validateOnboarding()) return;
+    const email = `${sanitizeUsername(onb.preferredUsername)}@gmail.com`;
+    setCreatedEmail(email);
+    const m = MENTORS[Math.floor(Math.random()*MENTORS.length)];
+    setAssignedMentor(m);
+    setOnbComplete(true);
+  }
+
+  // ---------- Render ----------
+  return (
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
+      <style>{baseCSS}</style>
+
+      {/* Top bar */}
+      <header style={{
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:16, position:"sticky", top:0, background:"rgba(255,255,255,0.9)",
+        backdropFilter:"saturate(180%) blur(8px)", borderBottom:"1px solid #e2e8f0",
+        borderRadius:12, marginTop:8, zIndex:5
+      }}>
+        <div style={{display:"flex", alignItems:"center", gap:12}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#111827"/><stop offset="100%" stopColor="#0ea5e9"/></linearGradient></defs>
+            <rect x="3" y="3" width="18" height="18" rx="5" stroke="url(#g)" strokeWidth="1.6"/>
+            <path d="M7 8h10M7 12h10M7 16h6" stroke="#0f172a" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          <div>
+            <h1 style={{margin:0,fontSize:22}}>Resume Screener + Onboarding (Frontend-only)</h1>
+            <div style={{fontSize:12,color:"#94a3b8"}}>
+              Roles: new/new123 · user/user123 · hr/hr123
+            </div>
+          </div>
+        </div>
+        <div>
+          {auth.loggedIn ? (
+            <div style={{display:"flex", alignItems:"center", gap:8}}>
+              <span className="muted">Logged in as <strong>{auth.who}</strong> ({auth.role})</span>
+              <button className="btn ghost" onClick={logout}>Logout</button>
+            </div>
+          ) : null}
+        </div>
+      </header>
+
+      {/* Auth gate */}
+      {!auth.loggedIn ? (
+        <section style={{ padding: 12 }}>
+          <div style={{ border:"1px solid #e2e8f0", borderRadius:16, padding:16, background:"linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)", maxWidth: 520, margin:"24px auto" }}>
+            <h2 style={{marginBottom:8}}>Login</h2>
+            <div className="muted" style={{marginBottom:12}}>Use one of: <code>new/new123</code> · <code>user/user123</code> · <code>hr/hr123</code></div>
+            <div style={{display:"grid", gap:12}}>
+              <div>
+                <label>Username</label>
+                <input value={loginU} onChange={(e)=>setLoginU(e.target.value)} placeholder="e.g., hr" />
+              </div>
+              <div>
+                <label>Password</label>
+                <input type="password" value={loginP} onChange={(e)=>setLoginP(e.target.value)} placeholder="••••••" />
+              </div>
+              <button className="btn" onClick={tryLogin}>Login</button>
+            </div>
+          </div>
+        </section>
+      ) : auth.role === "new" ? (
+        <section style={{ padding: 12 }}>
+          {!onbComplete ? (
+            <div style={{ border:"1px solid #e2e8f0", borderRadius:16, padding:16, background:"linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" }}>
+              <h2>Onboarding — New Employee Info</h2>
+              <div className="muted" style={{marginTop:4, marginBottom:12}}>Fill all required fields. Gmail account will be created from your preferred username.</div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))", gap:12 }}>
+                {/* Personal */}
+                <div><label>Full Name *</label><input value={onb.fullName} onChange={e=>setOnb({...onb, fullName:e.target.value})} /></div>
+                <div><label>Personal Email *</label><input value={onb.personalEmail} onChange={e=>setOnb({...onb, personalEmail:e.target.value})} /></div>
+                <div><label>Phone *</label><input value={onb.phone} onChange={e=>setOnb({...onb, phone:e.target.value})} /></div>
+                <div><label>Address</label><input value={onb.address} onChange={e=>setOnb({...onb, address:e.target.value})} /></div>
+                <div><label>Date of Birth</label><input type="date" value={onb.dob} onChange={e=>setOnb({...onb, dob:e.target.value})} /></div>
+
+                {/* Employment */}
+                <div><label>Position Title *</label><input value={onb.positionTitle} onChange={e=>setOnb({...onb, positionTitle:e.target.value})} /></div>
+                <div><label>Department *</label><input value={onb.department} onChange={e=>setOnb({...onb, department:e.target.value})} /></div>
+                <div><label>Start Date *</label><input type="date" value={onb.startDate} onChange={e=>setOnb({...onb, startDate:e.target.value})} /></div>
+                <div><label>Employment Type</label>
+                  <select value={onb.employmentType} onChange={e=>setOnb({...onb, employmentType:e.target.value})}>
+                    <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Intern</option>
+                  </select>
+                </div>
+                <div><label>Manager Name</label><input value={onb.managerName} onChange={e=>setOnb({...onb, managerName:e.target.value})} /></div>
+                <div>
+                  <label>Highest Education</label>
+                  <select value={onb.educationHighest} onChange={e=>setOnb({...onb, educationHighest:e.target.value})}>
+                    <option value="">—</option>
+                    {EDUCATION_LEVELS.map(l => <option key={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div><label>Skills (comma separated)</label><input value={onb.skills} onChange={e=>setOnb({...onb, skills:e.target.value})} placeholder="React, JS, CSS" /></div>
+
+                {/* Payroll / Compliance */}
+                <div><label>Bank Name</label><input value={onb.bankName} onChange={e=>setOnb({...onb, bankName:e.target.value})} /></div>
+                <div><label>Bank Account</label><input value={onb.bankAccount} onChange={e=>setOnb({...onb, bankAccount:e.target.value})} /></div>
+                <div><label>Tax ID</label><input value={onb.taxId} onChange={e=>setOnb({...onb, taxId:e.target.value})} /></div>
+
+                {/* Emergency */}
+                <div><label>Emergency Contact Name *</label><input value={onb.emName} onChange={e=>setOnb({...onb, emName:e.target.value})} /></div>
+                <div><label>Emergency Relation</label><input value={onb.emRelation} onChange={e=>setOnb({...onb, emRelation:e.target.value})} /></div>
+                <div><label>Emergency Phone *</label><input value={onb.emPhone} onChange={e=>setOnb({...onb, emPhone:e.target.value})} /></div>
+
+                {/* Preferences */}
+                <div><label>T-Shirt Size</label>
+                  <select value={onb.tshirt} onChange={e=>setOnb({...onb, tshirt:e.target.value})}>
+                    <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option>
+                  </select>
+                </div>
+                <div><label>Dietary Restrictions</label><input value={onb.dietary} onChange={e=>setOnb({...onb, dietary:e.target.value})} placeholder="Vegetarian, Halal, etc." /></div>
+
+                {/* Gmail creation */}
+                <div><label>Preferred Gmail Username *</label><input value={onb.preferredUsername} onChange={e=>setOnb({...onb, preferredUsername:e.target.value})} placeholder="e.g., aisha.rahman" /></div>
+                <div><label>Preferred Gmail Password *</label><input type="password" value={onb.preferredPassword} onChange={e=>setOnb({...onb, preferredPassword:e.target.value})} placeholder="min 6 chars" /></div>
+              </div>
+
+              <div style={{ display:"flex", gap:8, marginTop:12 }}>
+                <button className="btn" onClick={submitOnboarding}>Submit & Create Gmail</button>
+                <button className="btn ghost" onClick={()=>setOnb({
+                  fullName:"", personalEmail:"", phone:"", address:"", dob:"",
+                  positionTitle:"", department:"", startDate:"", employmentType:"Full-time", managerName:"",
+                  educationHighest:"", skills:"",
+                  bankName:"", bankAccount:"", taxId:"",
+                  emName:"", emRelation:"", emPhone:"",
+                  tshirt:"M", dietary:"",
+                  preferredUsername:"", preferredPassword:""
+                })}>Clear</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ border:"1px solid #e2e8f0", borderRadius:16, padding:16, background:"linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" }}>
+              <h2>🎉 Onboarding Complete</h2>
+              <div className="muted" style={{marginTop:4, marginBottom:12}}>Here’s your summary. You still don’t have access to the HR screener.</div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))", gap:12 }}>
+                <div style={{ border:"1px solid #e2e8f0", borderRadius:12, padding:12 }}>
+                  <h3 style={{marginTop:0}}>Your Details</h3>
+                  <div><strong>Name:</strong> {onb.fullName}</div>
+                  <div><strong>Email:</strong> {onb.personalEmail}</div>
+                  <div><strong>Phone:</strong> {onb.phone}</div>
+                  <div><strong>Role:</strong> {onb.positionTitle}</div>
+                  <div><strong>Department:</strong> {onb.department}</div>
+                  <div><strong>Start Date:</strong> {onb.startDate}</div>
+                </div>
+
+                <div style={{ border:"1px solid #e2e8f0", borderRadius:12, padding:12 }}>
+                  <h3 style={{marginTop:0}}>👩‍🏫 Assigned Mentor</h3>
+                  <div><strong>Name:</strong> {assignedMentor?.name}</div>
+                  <div><strong>Email:</strong> {assignedMentor?.email}</div>
+                  <div><strong>Department:</strong> {assignedMentor?.dept}</div>
+                </div>
+
+                <div style={{ border:"1px solid #e2e8f0", borderRadius:12, padding:12 }}>
+                  <h3 style={{marginTop:0}}>📧 New Gmail Account</h3>
+                  <div><strong>Email:</strong> {createdEmail}</div>
+                  <div><strong>Password:</strong> {onb.preferredPassword}</div>
+                </div>
+              </div>
+
+              <div style={{ display:"flex", gap:8, marginTop:12 }}>
+                <button className="btn ghost" onClick={logout}>Logout</button>
+                <button className="btn" onClick={()=>alert("You can now proceed to your user dashboard (if implemented).")}>Proceed</button>
+              </div>
+            </div>
+          )}
+        </section>
+      ) : auth.role === "hr" ? (
+        // HR sees the original screener
+        <ScreenerApp />
+      ) : (
+        // Basic users: no screener access
+        <section style={{ padding: 12 }}>
+          <div style={{ border:"1px solid #e2e8f0", borderRadius:16, padding:16, background:"linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" }}>
+            <h2>User Home</h2>
+            <div className="muted" style={{marginTop:4}}>You’re logged in as a normal user and do not have access to the Resume Screener. Please login as <strong>hr</strong> to use it.</div>
+          </div>
+        </section>
+      )}
+
+      <footer style={{ padding: 24, fontSize: 12, color: "#64748b", textAlign: "center" }}>
+        Frontend-only demo. Your data stays in the browser. No external libraries.
+      </footer>
+    </div>
+  );
+}
+
+/* =========================================================
+   ORIGINAL RESUME SCREENER — kept exactly, only renamed to ScreenerApp()
+   ========================================================= */
+
+function ScreenerApp() {
   // -------------------- Sample Data --------------------
   const sampleResumes = useMemo(
     () => [
@@ -112,13 +406,11 @@ export default function App() {
   const [tab, setTab] = useState("ingest"); // Default tab
 
   // -------------------- Helpers --------------------
+  const EDU_ORDER = { "High School": 0, Diploma: 1, Bachelor: 2, Master: 3, PhD: 4 };
 
-  // Ensure that " React " and "react" are read as the same thing
   function normalize(str) {
     return (str || "").trim().toLowerCase();
   }
-
-  // Calculate same elements between 2 arrays (like resume skills & skills required)
   function intersectCount(a, b) {
     const setB = new Set(b.map(normalize));
     let n = 0;
@@ -126,22 +418,19 @@ export default function App() {
     return n;
   }
 
-  // If user paste JSON data, save it to resumes
   function loadJSONInput() {
     try {
-      const parsed = JSON.parse(rawInput);  // Parse raw input (JSON) into JSON
-      if (Array.isArray(parsed)) {  // Ensure that parsed info is an array
-        setResumes(parsed); // Update parsed info to `resume`, UI update
+      const parsed = JSON.parse(rawInput);
+      if (Array.isArray(parsed)) {
+        setResumes(parsed);
       } else {
         alert("JSON must be an array of resumes");
       }
-    } catch (e) { // If JSON format wrong, cannot turn into array, pop out this
+    } catch (e) {
       alert("Invalid JSON");
     }
   }
 
-  // Allow user to upload either JSON file or PDF file,
-  // Then check on the files, whether 
   function onUploadFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
@@ -180,7 +469,7 @@ export default function App() {
     reader.readAsText(file);
   }
 
-  // -------------------- Filtering --------------------
+  // Filtering
   const filtered = useMemo(() => {
     const reqSkills = requiredSkills
       .split(/[,|]/)
@@ -202,7 +491,7 @@ export default function App() {
     });
   }, [resumes, minYears, minEdu, requiredSkills, locationContains]);
 
-  // -------------------- Scoring --------------------
+  // Scoring
   const keywordList = useMemo(
     () => keywordBoost.split(/[,|]/).map((s) => normalize(s)).filter(Boolean),
     [keywordBoost]
@@ -317,6 +606,66 @@ export default function App() {
   }
 
   // -------------------- UI --------------------
+  const styles = {
+    app: { maxWidth: 1100, margin: "0 auto", padding: 16 },
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      position: "sticky",
+      top: 0,
+      background: "rgba(255,255,255,0.9)",
+      backdropFilter: "saturate(180%) blur(8px)",
+      borderBottom: "1px solid #e2e8f0",
+      zIndex: 5,
+      borderRadius: 12,
+      marginTop: 8,
+    },
+    tabs: { display: "flex", gap: 8, flexWrap: "wrap" },
+    panel: { padding: 12 },
+    textarea: { width: "100%", minHeight: 160, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", padding: 10, borderRadius: 12, border: "1px solid #e2e8f0", background: "#f8fafc" },
+    grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 12 },
+    summary: { marginTop: 12, padding: 10, background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 12 },
+    table: { width: "100%", borderCollapse: "separate", borderSpacing: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" },
+    compareGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginTop: 12 },
+    compareCard: { border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, boxShadow: "0 8px 24px rgba(15,23,42,0.04)", background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)" },
+    card: { border: "1px solid #e2e8f0", borderRadius: 16, padding: 16, boxShadow: "0 8px 30px rgba(2,6,23,0.06)", background: "linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" },
+  };
+
+  const baseCSS = `
+    :root { --c:#0f172a; --b:#fff; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; --accent2:#0ea5e9; }
+    body { color: var(--c); background: var(--b); }
+    h2 { margin: 0 0 8px; font-size: 18px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom: 6px; }
+    input, select, textarea { padding: 10px; border:1px solid var(--line); border-radius: 12px; outline: none; width: 100%; background: #fff; transition: box-shadow .2s, border-color .2s; }
+    input[type=checkbox] { width: auto; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(14,165,233,0.15); }
+    table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    table thead th { background: #f8fafc; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color:#334155 }
+    .btn { background: var(--c); color: white; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: transform .05s ease, filter .15s ease; }
+    .btn:hover { filter: brightness(0.95); }
+    .btn:active { transform: translateY(1px); }
+    .btn.ghost { background: #fff; color: var(--c); border: 1px solid var(--line); }
+    .muted { color: var(--muted); }
+    .file { display:inline-flex; align-items:center; gap:8px; border:1px dashed var(--line); padding:10px 14px; border-radius:12px; cursor:pointer; }
+    .file input { display:none; }
+  `;
+
+  function tabBtn(active) {
+    return {
+      background: active ? "#0f172a" : "#fff",
+      color: active ? "#fff" : "#0f172a",
+      border: "1px solid #0f172a",
+      borderRadius: 999,
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontWeight: 700,
+      transition: "all .15s ease",
+    };
+  }
+
+  // -------------------- UI --------------------
   return (
     <div style={styles.app}>
       <style>{baseCSS}</style>
@@ -371,7 +720,7 @@ export default function App() {
               <button onClick={loadJSONInput} className="btn">Load JSON</button>
             </div>
             <SummaryBar resumes={resumes} />
-            <ResumeTable data={resumes} selectable={false} selected={selected} onToggleSelect={() => {}} />
+            <ResumeTable data={resumes} selectable={false} selected={[]} onToggleSelect={() => {}} />
           </Card>
         </section>
       )}
@@ -449,10 +798,10 @@ export default function App() {
   );
 }
 
-// -------------------- Small Components --------------------
+// -------------------- Small Components (unchanged) --------------------
 function Card({ title, subtitle, children }) {
   return (
-    <div style={styles.card}>
+    <div style={{ border: "1px solid #e2e8f0", borderRadius: 16, padding: 16, boxShadow: "0 8px 30px rgba(2,6,23,0.06)", background: "linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 18 }}>{title}</h2>
@@ -488,16 +837,17 @@ function SummaryBar({ resumes, label = "Loaded", scoreKey }) {
   const avgYears = resumes.length ? (resumes.reduce((s, r) => s + (r.yearsExp || 0), 0) / resumes.length).toFixed(1) : 0;
   const avgScore = scoreKey && resumes.length ? (resumes.reduce((s, r) => s + (r[scoreKey] || 0), 0) / resumes.length).toFixed(1) : undefined;
   return (
-    <div style={styles.summary}>
+    <div style={{ marginTop: 12, padding: 10, background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 12 }}>
       <strong>{label}:</strong> {resumes.length} resumes · avg exp {avgYears} yrs {avgScore !== undefined ? `· avg score ${avgScore}` : ""}
     </div>
   );
 }
 
 function ResumeTable({ data, selectable, selected, onToggleSelect, showScore = false }) {
+  const EDU_ORDER = { "High School": 0, Diploma: 1, Bachelor: 2, Master: 3, PhD: 4 };
   return (
     <div style={{ overflowX: "auto", marginTop: 12 }}>
-      <table style={styles.table}>
+      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
         <thead>
           <tr>
             {selectable ? <th style={{ width: 36 }}></th> : null}
@@ -541,9 +891,9 @@ function ResumeTable({ data, selectable, selected, onToggleSelect, showScore = f
 function CompareGrid({ resumes }) {
   if (!resumes.length) return <div style={{ marginTop: 12 }} className="muted">No candidates selected.</div>;
   return (
-    <div style={styles.compareGrid}>
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginTop: 12 }}>
       {resumes.map((r) => (
-        <div key={r.id} style={styles.compareCard}>
+        <div key={r.id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, boxShadow: "0 8px 24px rgba(15,23,42,0.04)", background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800 }}>{r.name}</div>
@@ -576,64 +926,4 @@ function Logo() {
       <path d="M7 8h10M7 12h10M7 16h6" stroke="#0f172a" strokeWidth="1.6" strokeLinecap="round"/>
     </svg>
   );
-}
-
-// -------------------- Styles --------------------
-const styles = {
-  app: { maxWidth: 1100, margin: "0 auto", padding: 16 },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    position: "sticky",
-    top: 0,
-    background: "rgba(255,255,255,0.9)",
-    backdropFilter: "saturate(180%) blur(8px)",
-    borderBottom: "1px solid #e2e8f0",
-    zIndex: 5,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  tabs: { display: "flex", gap: 8, flexWrap: "wrap" },
-  panel: { padding: 12 },
-  textarea: { width: "100%", minHeight: 160, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", padding: 10, borderRadius: 12, border: "1px solid #e2e8f0", background: "#f8fafc" },
-  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 12 },
-  summary: { marginTop: 12, padding: 10, background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 12 },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" },
-  compareGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginTop: 12 },
-  compareCard: { border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, boxShadow: "0 8px 24px rgba(15,23,42,0.04)", background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)" },
-  card: { border: "1px solid #e2e8f0", borderRadius: 16, padding: 16, boxShadow: "0 8px 30px rgba(2,6,23,0.06)", background: "linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" },
-};
-
-const baseCSS = `
-  :root { --c:#0f172a; --b:#fff; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; --accent2:#0ea5e9; }
-  body { color: var(--c); background: var(--b); }
-  h2 { margin: 0 0 8px; font-size: 18px; }
-  label { display:block; font-size:12px; color:var(--muted); margin-bottom: 6px; }
-  input, select, textarea { padding: 10px; border:1px solid var(--line); border-radius: 12px; outline: none; width: 100%; background: #fff; transition: box-shadow .2s, border-color .2s; }
-  input[type=checkbox] { width: auto; }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(14,165,233,0.15); }
-  table th, table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); }
-  table thead th { background: #f8fafc; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color:#334155 }
-  .btn { background: var(--c); color: white; border: none; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: transform .05s ease, filter .15s ease; }
-  .btn:hover { filter: brightness(0.95); }
-  .btn:active { transform: translateY(1px); }
-  .btn.ghost { background: #fff; color: var(--c); border: 1px solid var(--line); }
-  .muted { color: var(--muted); }
-  .file { display:inline-flex; align-items:center; gap:8px; border:1px dashed var(--line); padding:10px 14px; border-radius:12px; cursor:pointer; }
-  .file input { display:none; }
-`;
-
-function tabBtn(active) {
-  return {
-    background: active ? "#0f172a" : "#fff",
-    color: active ? "#fff" : "#0f172a",
-    border: "1px solid #0f172a",
-    borderRadius: 999,
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontWeight: 700,
-    transition: "all .15s ease",
-  };
 }
