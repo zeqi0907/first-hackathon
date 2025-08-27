@@ -36,3 +36,58 @@
     transform: rotate(360deg);
   }
 }
+
+.btn {
+  background-color: #0f172a;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.btn:hover {
+  background-color: #0f5e88; /* hover 时变色 */
+}
+
+.btn:active {
+  transform: scale(0.95); /* 点击时缩小一点 */
+  background-color: #102c43; /* 点击时更深的绿色 */
+}
+
+/* Full container */
+.login-container {
+  display: flex;
+  height: 100vh; /* full page height */
+}
+
+/* Left: Login form */
+.login-left {
+  flex: 1; /* take half width */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #f5f5f5; /* optional background color */
+  padding-top: 80px;
+}
+
+/* Login box */
+.login-box {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* Right: Image */
+.login-right {
+  flex: 1; /* take half width */
+  background-image: url("C:\Users\joeyi\OneDrive\Desktop\2025\Hackathon\myapp\public\backgroundpic.jpg"); /* keep it in public folder */
+  background-size: cover;
+  background-position: center;
+  opacity: 0.7; /* make picture transparent */
+  border-radius: 15px; /* round picture corners */
+  margin: 20px; /* optional: space from window edges */
+}
