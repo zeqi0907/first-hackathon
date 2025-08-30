@@ -1,4 +1,4 @@
-# Talent Seeker System
+# Talent Seeking System
 
 ## Team Members
 - Tan Ze Qi
