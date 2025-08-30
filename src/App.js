@@ -515,7 +515,7 @@ export default function App() {
               boxShadow: "-30px 3px 20px rgba(16,44,67,0.2)",
             }}
           >
-            <img src="/backgroundpic.jpg" alt="Onboarding Illustration" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "0 20px 20px 0" }} />
+            <img src={process.env.PUBLIC_URL + "/backgroundpic.jpg"} alt="Onboarding Illustration" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "0 20px 20px 0" }} />
           </div>
         </section>
       ) : auth.role === "new" ? (
