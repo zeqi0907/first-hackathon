@@ -1,3 +1,4 @@
+// App.js
 import React, { useMemo, useRef, useState } from "react";
 import "./App.css";
 
@@ -43,7 +44,7 @@ export default function App() {
     new: { username: "new", password: "new123" },
     user: { username: "user", password: "user123" },
     hr: { username: "hr", password: "hr123" },
-  };
+  }; 
 
   const [auth, setAuth] = useState({ loggedIn: false, role: "", who: "" });
   const [loginU, setLoginU] = useState("");
@@ -346,7 +347,7 @@ export default function App() {
   // submitOnboarding: replace the payload line with a proper spread and rest stays the same
   async function submitOnboarding() {
     if (!validateOnboarding()) return;
-    // FIX: use spread operator to send full onboarding object
+    // use spread operator to send full onboarding object
     const payload = { ...onb };
 
     try {
@@ -1178,13 +1179,12 @@ function ScreenerApp() {
   const [minEdu, setMinEdu] = useState("High School");
   const [requiredSkills, setRequiredSkills] = useState("");
   const [locationContains, setLocationContains] = useState("");
-  const [wExp, setWExp] = useState(3);
-  const [wSkills, setWSkills] = useState(4);
-  const [wEdu, setWEdu] = useState(2);
-  const [wProj, setWProj] = useState(2);
+  const [keywordBoost, setKeywordBoost] = useState("");
+  const [wExp, setWExp] = useState(1);
+  const [wSkills, setWSkills] = useState(1);
+  const [wEdu, setWEdu] = useState(1);
+  const [wProj, setWProj] = useState(1);
   const [wCert, setWCert] = useState(1);
-  const [keywordBoost, setKeywordBoost] = useState("react, leadership, testing");
-  const [selected, setSelected] = useState([]);
   const [sortDir, setSortDir] = useState("desc");
   const [tab, setTab] = useState("home"); // default to home for HR
 
@@ -1316,35 +1316,17 @@ function ScreenerApp() {
 
   const scored = useMemo(() => {
     const arr = filtered.map((r) => ({ ...r, __score: scoreResume(r) }));
-    arr.sort((a, b) => (sortDir === "desc" ? b.__score - a.__score : a.__score - b.__score));
-    return arr;
+    return arr.sort((a, b) => (sortDir === "desc" ? b.__score - a.__score : a.__score - b.__score));
   }, [filtered, sortDir, wExp, wSkills, wEdu, wProj, wCert, keywordList]);
 
-  function toggleSelect(id) { setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])); }
-
-  function printSelection() {
-    const toPrint = selected.length ? scored.filter((r) => selected.includes(r.id)) : scored;
-    const html = renderPrintHTML(toPrint);
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    w.print();
-  }
-
-  function renderPrintHTML(list) {
+  function printList(list) {
     const style = `
       <style>
-        * { box-sizing: border-box; }
-        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; color: #0f172a; }
-        h1 { margin: 0 0 16px; }
-        .resume { border: 1px solid #e5e7eb; padding: 16px; margin-bottom: 12px; border-radius: 12px; background: #fff; }
-        .meta { display: flex; flex-wrap: wrap; gap: 12px; color: #334155; }
-        .tag { display: inline-block; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 999px; margin: 2px; font-size: 12px; background:#f8fafc; }
-        .score { font-weight: 700; }
-        @media print { .resume { break-inside: avoid; } }
+        body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;padding:18px;color:#0f172a}
+        .resume{margin-bottom:18px;padding:12px;border:1px solid #e2e8f0;border-radius:8px}
+        .meta{color:#64748b;font-size:13px;display:flex;gap:8px}
+        .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#f8fafc;margin-right:6px;font-size:12px}
+        .score{font-weight:700}
       </style>
     `;
 
@@ -1406,24 +1388,24 @@ function ScreenerApp() {
 
   const styles = { app: { maxWidth: "95%", margin: "0 auto", padding: 16 } };
 
-  const baseCSS = `:root { --c:#0f172a; --b:#fff; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; --accent2:#0ea5e9; }`;
+  const baseCSS2 = `:root { --c:#0f172a; --b:#fff; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; --accent2:#0ea5e9; }`;
 
-  function tabBtn(active) { return { background: active ? "#0f172a" : "#fff", color: active ? "#fff" : "#0f172a", border: "1px solid #0f172a", borderRadius: 999, padding: "8px 12px", cursor: "pointer", fontWeight: 700, transition: "all .15s ease", }; }
+  function tabBtn2(active) { return { background: active ? "#0f172a" : "#fff", color: active ? "#fff" : "#0f172a", border: "1px solid #0f172a", borderRadius: 999, padding: "8px 12px", cursor: "pointer", fontWeight: 700, transition: "all .15s ease", }; }
 
   return (
     <div style={styles.app}>
-      <style>{baseCSS}</style>
+      <style>{baseCSS2}</style>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, position: "sticky", top: 0, background: "rgba(255,255,255,0.9)", backdropFilter: "saturate(180%) blur(8px)", borderBottom: "1px solid #e2e8f0", zIndex: 5, borderRadius: 12, marginTop: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Logo />
           <div>
             <h1 style={{ margin: 0, fontSize: 22 }}>Resume Screener (HR)</h1>
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>Frontend-only · No external libraries</div>
+            <div style={{ fontSize: 12, color: "#94a3b8" }}>A screening tool</div>
           </div>
         </div>
         <nav style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[{ k: "home", label: "🏠 Home" }, { k: "ingest", label: "📥 Ingest" }, { k: "filter", label: "⏳ Filter" }, { k: "analyze", label: "📊 Analyze & Score" }, { k: "compare", label: "🖨️ Compare & Print" }].map((t) => (
-            <button key={t.k} onClick={() => setTab(t.k)} style={tabBtn(tab === t.k)}>
+            <button key={t.k} onClick={() => setTab(t.k)} style={tabBtn2(tab === t.k)}>
               {t.label}
             </button>
           ))}
@@ -1467,7 +1449,27 @@ function ScreenerApp() {
             <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
               <button className="btn" onClick={() => setTab("ingest")}>Load / Ingest</button>
               <button className="btn ghost" onClick={() => setTab("filter")}>Filter</button>
-              <div style={{ marginLeft: "auto" }} className="muted">Last assigned: {lastAssigned ? `${lastAssigned.name} → ${lastAssigned.mentor}` : "—"}</div>
+              <div style={{ marginLeft: "auto" }} className="muted">Last assigned: {lastAssigned ? (lastAssigned.name || lastAssigned.ic) : "—"}</div>
+            </div>
+          </Card>
+
+          <Card title="Quick Actions" subtitle="Small helpers">
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div className="file" onClick={() => fileInputRef.current?.click()}>
+                  Upload JSON
+                  <input ref={fileInputRef} type="file" onChange={(e) => e.target.files && onUploadFile(e.target.files[0])} />
+                </div>
+                <div className="file" onClick={() => {
+                  const list = resumes.slice(0, 6);
+                  const html = printList(list);
+                  const win = window.open("", "_blank");
+                  if (win) {
+                    win.document.write(html);
+                    win.document.close();
+                  }
+                }}>Print sample</div>
+              </div>
             </div>
           </Card>
         </section>
@@ -1475,203 +1477,163 @@ function ScreenerApp() {
 
       {tab === "ingest" && (
         <section style={{ padding: 12 }}>
-          <Card title="Load Resumes" subtitle="Paste JSON array or simple CSV, or upload a .json/.csv file.">
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <button onClick={() => setResumes(sampleResumes)} className="btn">Use Sample</button>
-              <button onClick={() => setResumes([])} className="btn ghost">Clear</button>
-              <label className="file">
-                <input ref={fileInputRef} type="file" accept=".json,.csv" onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) onUploadFile(f); }} />
-                Upload .json/.csv
-              </label>
+          <Card title="Ingest JSON" subtitle="Paste an array of resumes (JSON) below and click Load">
+            <textarea value={rawInput} onChange={(e) => setRawInput(e.target.value)} style={{ minHeight: 160, width: "100%", borderRadius: 12, border: "1px solid #e2e8f0", padding: 12 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button className="btn" onClick={loadJSONInput}>Load JSON</button>
+              <div className="muted" style={{ alignSelf: "center" }}>Or upload a JSON file using the Upload button.</div>
             </div>
-            <textarea value={rawInput} onChange={(e) => setRawInput(e.target.value)} placeholder={`JSON example (array of resumes).\nCSV header: id,name,email,phone,location,yearsExp,skills,education\nskills: pipe-separated; education: level:field:inst;level:field:inst`} style={{ width: "100%", minHeight: 160, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", padding: 10, borderRadius: 12, border: "1px solid #e2e8f0", background: "#f8fafc" }} />
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={loadJSONInput} className="btn">Load JSON</button>
-            </div>
-            <SummaryBar resumes={resumes} />
-            <ResumeTable data={resumes} selectable={false} selected={[]} onToggleSelect={() => {}} assignMentor={assignMentor} />
-
-            {lastAssigned ? (
-              <div style={{ marginTop: 12, padding: 12, border: '1px solid #e2e8f0', borderRadius: 12, background: '#f8fafc' }}>
-                <strong>Last mentor assignment</strong>
-                <div style={{ marginTop: 6 }}>
-                  <div><strong>Candidate:</strong> {lastAssigned.name}</div>
-                  <div><strong>Assigned mentor:</strong> {lastAssigned.mentor}</div>
-                  <div><strong>Mentor email:</strong> {Array.isArray(lastAssigned.mentor_email) ? lastAssigned.mentor_email.join(', ') : lastAssigned.mentor_email}</div>
-                </div>
-              </div>
-            ) : null}
-
           </Card>
         </section>
       )}
 
       {tab === "filter" && (
         <section style={{ padding: 12 }}>
-          <Card title="Basic Requirements" subtitle="Filter down to candidates who match the must-haves.">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 12 }}>
-              <InputL label="Minimum Years of Experience"><input type="number" min={0} value={minYears} onChange={(e) => setMinYears(Number(e.target.value))} /></InputL>
-              <InputL label="Minimum Education Level"><select value={minEdu} onChange={(e) => setMinEdu(e.target.value)}>{Object.keys(EDU_ORDER).map((k) => (<option key={k} value={k}>{k}</option>))}</select></InputL>
-              <InputL label="Required Skills (comma or |)"><input value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="react, typescript" /></InputL>
-              <InputL label="Location contains"><input value={locationContains} onChange={(e) => setLocationContains(e.target.value)} placeholder="Kuala" /></InputL>
+          <Card title="Filter Candidates" subtitle="Narrow down candidates by years, education, location, and required skills">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }}>
+              <div>
+                <label>Min years experience</label>
+                <input type="number" value={minYears} onChange={(e) => setMinYears(Number(e.target.value || 0))} />
+              </div>
+              <div>
+                <label>Min education level</label>
+                <select value={minEdu} onChange={(e) => setMinEdu(e.target.value)}>
+                  {Object.keys(EDU_ORDER).map((k) => <option key={k}>{k}</option>)}
+                </select>
+              </div>
+              <div>
+                <label>Location contains</label>
+                <input value={locationContains} onChange={(e) => setLocationContains(e.target.value)} placeholder="Kuala Lumpur" />
+              </div>
+              <div>
+                <label>Required skills (comma separated)</label>
+                <input value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="React,Node" />
+              </div>
             </div>
-            <SummaryBar resumes={filtered} label="After Filter" />
-            <ResumeTable data={filtered} selectable selected={selected} onToggleSelect={toggleSelect} assignMentor={assignMentor} />
+
+            <div style={{ marginTop: 12 }}>
+              <ResumeTable data={filtered} selectable={true} selected={[]} onToggleSelect={() => {}} showScore={false} assignMentor={assignMentor} />
+            </div>
           </Card>
         </section>
       )}
 
       {tab === "analyze" && (
         <section style={{ padding: 12 }}>
-          <Card title="Analysis Priorities" subtitle="Adjust weights (0–5). Keywords give small bonuses.">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 12 }}>
-              <Weight label="Experience" value={wExp} onChange={setWExp} />
-              <Weight label="Skills" value={wSkills} onChange={setWSkills} />
-              <Weight label="Education" value={wEdu} onChange={setWEdu} />
-              <Weight label="Projects" value={wProj} onChange={setWProj} />
-              <Weight label="Certifications" value={wCert} onChange={setWCert} />
-              <InputL label="Keyword Boosts (comma or |)"><input value={keywordBoost} onChange={(e) => setKeywordBoost(e.target.value)} /></InputL>
+          <Card title="Analyze & Score" subtitle="Tune weights to score candidates">
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+                <label>Weight: Experience <input type="range" min={0} max={5} step={0.1} value={wExp} onChange={(e) => setWExp(Number(e.target.value))} /></label>
+                <label>Weight: Skills <input type="range" min={0} max={5} step={0.1} value={wSkills} onChange={(e) => setWSkills(Number(e.target.value))} /></label>
+                <label>Weight: Education <input type="range" min={0} max={5} step={0.1} value={wEdu} onChange={(e) => setWEdu(Number(e.target.value))} /></label>
+                <label>Weight: Projects <input type="range" min={0} max={5} step={0.1} value={wProj} onChange={(e) => setWProj(Number(e.target.value))} /></label>
+                <label>Weight: Certs <input type="range" min={0} max={5} step={0.1} value={wCert} onChange={(e) => setWCert(Number(e.target.value))} /></label>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ width: 120 }}>Keyword boosts</label>
+                <input value={keywordBoost} onChange={(e) => setKeywordBoost(e.target.value)} placeholder="react,next,graphql" style={{ flex: 1 }} />
+                <div style={{ marginLeft: "auto" }}>
+                  <button className="btn" onClick={() => setSortDir(sortDir === "desc" ? "asc" : "desc")}>Sort {sortDir}</button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <ResumeTable data={scored} selectable={false} selected={[]} onToggleSelect={() => {}} showScore={true} assignMentor={assignMentor} />
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-              <span className="muted">Sort</span>
-              <select value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
-                <option value="desc">Highest first</option>
-                <option value="asc">Lowest first</option>
-              </select>
-            </div>
-            <SummaryBar resumes={scored} label="Scored" scoreKey="__score" />
-            <ResumeTable data={scored} selectable selected={selected} onToggleSelect={toggleSelect} showScore assignMentor={assignMentor} />
           </Card>
         </section>
       )}
 
       {tab === "compare" && (
         <section style={{ padding: 12 }}>
-          <Card title="Compare & Print" subtitle="Select up to 3 candidates to compare and print a clean summary.">
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={printSelection} className="btn">Print Selected / All</button>
-              <button onClick={() => setSelected([])} className="btn ghost">Clear Selection</button>
+          <Card title="Compare & Print" subtitle="Select candidates and print a comparison sheet">
+            <div className="muted">Select rows and click Print</div>
+            <div style={{ marginTop: 12 }}>
+              <ResumeTable data={scored.slice(0, 10)} selectable={true} selected={[]} onToggleSelect={() => {}} showScore={true} assignMentor={assignMentor} />
             </div>
-            <CompareGrid resumes={scored.filter((r) => selected.includes(r.id)).slice(0, 3)} />
-            <ResumeTable data={scored} selectable selected={selected} onToggleSelect={toggleSelect} showScore assignMentor={assignMentor} />
           </Card>
         </section>
       )}
-
-      <footer style={{ padding: 24, fontSize: 12, color: "#64748b", textAlign: "center" }}>
-        Frontend-only demo. Your data stays in the browser.
-      </footer>
     </div>
   );
-}
 
-/* Utility components (unchanged) */
-function Card({ title, subtitle, children }) { return (
-  <div style={{ border: "1px solid #e2e8f0", borderRadius: 16, padding: 16, boxShadow: "0 8px 30px rgba(2,6,23,0.06)", background: "linear-gradient(180deg,#ffffff 0%, #f8fafc 100%)" }}>
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
-      <div>
-        <h2 style={{ margin: 0, fontSize: 18 }}>{title}</h2>
-        {subtitle ? <div className="muted" style={{ marginTop: 4 }}>{subtitle}</div> : null}
-      </div>
-    </div>
-    {children}
-  </div>
-);}
-
-function InputL({ label, children }) { return (<div><label>{label}</label>{children}</div>); }
-function Weight({ label, value, onChange }) { return (<div><label>{label} Weight: <strong>{value}</strong></label><input type="range" min={0} max={5} value={value} onChange={(e) => onChange(Number(e.target.value))} /></div>); }
-function SummaryBar({ resumes, label = "Loaded", scoreKey }) { const avgYears = resumes.length ? (resumes.reduce((s, r) => s + (r.yearsExp || 0), 0) / resumes.length).toFixed(1) : 0; const avgScore = scoreKey && resumes.length ? (resumes.reduce((s, r) => s + (r[scoreKey] || 0), 0) / resumes.length).toFixed(1) : undefined; return (<div style={{ marginTop: 12, padding: 10, background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 12 }}><strong>{label}:</strong> {resumes.length} resumes · avg exp {avgYears} yrs {avgScore !== undefined ? `· avg score ${avgScore}` : ""}</div>); }
-
-function ResumeTable({ data, selectable, selected, onToggleSelect, showScore = false, assignMentor }) {
-  const EDU_ORDER = { "High School": 0, Diploma: 1, Bachelor: 2, Master: 3, PhD: 4 };
-  return (
-    <div style={{ overflowX: "auto", marginTop: 12 }}>
-      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
-        <thead>
-          <tr>
-            {selectable ? <th style={{ width: 36 }}></th> : null}
-            <th>ID</th>
-            <th>Name</th>
-            <th>Years</th>
-            <th>Top Education</th>
-            <th>Skills</th>
-            <th>Projects</th>
-            <th>Location</th>
-            {showScore ? <th>Score</th> : null}
-            {assignMentor ? <th>Actions</th> : null}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((r) => (
-            <tr key={r.id}>
-              {selectable ? (
-                <td>
-                  <input type="checkbox" checked={selected.includes(r.id)} onChange={() => onToggleSelect(r.id)} />
-                </td>
-              ) : null}
-              <td>{r.id}</td>
-              <td>
-                <div style={{ fontWeight: 700 }}>{r.name}</div>
-                <div className="muted" style={{ fontSize: 12 }}>{(r.email || "") + (r.phone ? ` · ${r.phone}` : "")}</div>
-              </td>
-              <td>{r.yearsExp || 0}</td>
-              <td>{(r.education || []).length ? (r.education || []).reduce((best, e) => (EDU_ORDER[e.level] > EDU_ORDER[best.level] ? e : best), (r.education || [])[0]).level : "—"}</td>
-              <td>{(r.skills || []).slice(0, 6).join(", ")}{(r.skills || []).length > 6 ? "…" : ""}</td>
-              <td>{(r.projects || []).length || 0}</td>
-              <td>{r.location || ""}</td>
-              {showScore ? <td><strong>{r.__score}</strong></td> : null}
-              {assignMentor ? (
-                <td>
-                  <button className="btn" onClick={() => {
-                    const ic = prompt(`Enter ic_number for ${r.name} (this is required by the backend)`);
-                    if (ic && ic.trim()) assignMentor(ic.trim());
-                  }}>Assign Mentor</button>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function CompareGrid({ resumes }) {
-  if (!resumes.length) return <div style={{ marginTop: 12 }} className="muted">No candidates selected.</div>;
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginTop: 12 }}>
-      {resumes.map((r) => (
-        <div key={r.id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, boxShadow: "0 8px 24px rgba(15,23,42,0.04)", background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800 }}>{r.name}</div>
-              <div className="muted" style={{ fontSize: 12 }}>{(r.email || "") + (r.phone ? ` · ${r.phone}` : "")}</div>
-            </div>
-            <div style={{ fontWeight: 800 }}>Score {r.__score}</div>
+  // ---------- small helper components ----------
+  function Card({ title, subtitle, children }) {
+    return (
+      <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#fff", marginBottom: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 800 }}>{title}</div>
+            <div className="muted" style={{ fontSize: 13 }}>{subtitle}</div>
           </div>
-          {r.summary ? <p style={{ marginTop: 8 }}>{r.summary}</p> : null}
-          <div><strong>Years:</strong> {r.yearsExp || 0}</div>
-          <div><strong>Education:</strong> {(r.education || []).map((e) => `${e.level}${e.field ? ` in ${e.field}` : ""}${e.institution ? ` @ ${e.institution}` : ""}`).join("; ")}</div>
-          <div><strong>Skills:</strong> {(r.skills || []).join(", ")}</div>
-          <div><strong>Projects:</strong> {(r.projects || []).map((p) => p.title).join(", ")}</div>
-          {(r.certifications || []).length ? <div><strong>Certifications:</strong> {(r.certifications || []).join(", ")}</div> : null}
         </div>
-      ))}
-    </div>
-  );
-}
+        <div style={{ marginTop: 12 }}>{children}</div>
+      </div>
+    );
+  }
 
-function Logo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#111827" />
-          <stop offset="100%" stopColor="#0ea5e9" />
-        </linearGradient>
-      </defs>
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="url(#g)" strokeWidth="1.6" />
-      <path d="M7 8h10M7 12h10M7 16h6" stroke="#0f172a" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
+  function Logo() {
+    return (
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="20" height="20" rx="5" stroke="#0f172a" strokeWidth="1.6" fill="#fff"/>
+        <path d="M6 8h12M6 12h12M6 16h8" stroke="#0f172a" strokeWidth="1.6" strokeLinecap="round"/>
+      </svg>
+    );
+  }
+
+  function ResumeTable({ data, selectable, selected, onToggleSelect, showScore = false, assignMentor }) {
+    const EDU_ORDER = { "High School": 0, Diploma: 1, Bachelor: 2, Master: 3, PhD: 4 };
+    return (
+      <div style={{ overflowX: "auto", marginTop: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
+          <thead>
+            <tr>
+              {selectable ? <th style={{ width: 36 }}></th> : null}
+              <th>ID</th>
+              <th>Name</th>
+              <th>Years</th>
+              <th>Top Education</th>
+              <th>Skills</th>
+              <th>Projects</th>
+              <th>Location</th>
+              {showScore ? <th>Score</th> : null}
+              {assignMentor ? <th>Actions</th> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((r) => (
+              <tr key={r.id}>
+                {selectable ? (
+                  <td>
+                    <input type="checkbox" checked={selected.includes(r.id)} onChange={() => onToggleSelect(r.id)} />
+                  </td>
+                ) : null}
+                <td>{r.id}</td>
+                <td>
+                  <div style={{ fontWeight: 700 }}>{r.name}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>{(r.email || "") + (r.phone ? ` · ${r.phone}` : "")}</div>
+                </td>
+                <td>{r.yearsExp || 0}</td>
+                <td>{(r.education || []).length ? (r.education || []).reduce((best, e) => (EDU_ORDER[e.level] > EDU_ORDER[best.level] ? e : best), (r.education || [])[0]).level : "—"}</td>
+                <td>{(r.skills || []).slice(0, 6).join(", ")}{(r.skills || []).length > 6 ? "…" : ""}</td>
+                <td>{(r.projects || []).length || 0}</td>
+                <td>{r.location || ""}</td>
+                {showScore ? <td><strong>{r.__score}</strong></td> : null}
+                {assignMentor ? (
+                  <td>
+                    <button className="btn" onClick={() => {
+                      const ic = prompt(`Enter ic_number for ${r.name} (this is required by the backend)`);
+                      if (ic && ic.trim()) assignMentor(ic.trim());
+                    }}>Assign Mentor</button>
+                  </td>
+                ) : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
 }
