@@ -84,7 +84,7 @@
 /* Right: Image */
 .login-right {
   flex: 1; /* take half width */
-  background-image: url("C:\Users\joeyi\OneDrive\Desktop\2025\Hackathon\myapp\public\backgroundpic.jpg"); /* keep it in public folder */
+  background-image: url("/backgroundpic.jpg"); /* keep it in public folder */
   background-size: cover;
   background-position: center;
   opacity: 0.7; /* make picture transparent */
