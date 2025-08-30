@@ -49,22 +49,81 @@ export default function App() {
   const [loginU, setLoginU] = useState("");
   const [loginP, setLoginP] = useState("");
 
-  function tryLogin() {
+  // ------------------ Logout ------------------
+  function logout() {
+    // clear auth state
+    setAuth({ loggedIn: false, role: "", who: "" });
+
+    // clear onboarding / created account state so UI resets
+    setOnbComplete(false);
+    setCreatedCredentials(null);
+    setAssignedMentor(null);
+    setCreatedEmail("");
+    setOnb({
+      fullName: "",
+      personalEmail: "",
+      phone: "",
+      address: "",
+      dob: "",
+      positionTitle: "",
+      department: "",
+      startDate: "",
+      employmentType: "Full-time",
+      managerName: "",
+      educationHighest: "",
+      skills: "",
+      bankName: "",
+      bankAccount: "",
+      taxId: "",
+      emName: "",
+      emRelation: "",
+      emPhone: "",
+      tshirt: "M",
+      dietary: "",
+      preferredUsername: "",
+      preferredPassword: "",
+    });
+    setOnbErrors({});
+    // optionally scroll to top so user sees login area
+    try { window.scrollTo?.(0, 0); } catch (e) {}
+  }
+
+
+  // tryLogin: attempt backend /login first, fallback to local demo accounts
+  async function tryLogin() {
+    const url = "http://127.0.0.1:5000/login";
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginU, password: loginP }),
+      });
+      const data = await res.json();
+      if (res.ok && data && data.username) {
+        setAuth({ loggedIn: true, role: data.role || "user", who: data.username });
+        return;
+      }
+      // if server responded with invalid credentials -> fall through to local check
+    } catch (err) {
+      console.warn("Backend /login unreachable, falling back to local demo accounts:", err);
+    }
+
+    // fallback local demo accounts
+    const ACCOUNTS = {
+      new: { username: "new", password: "new123" },
+      user: { username: "user", password: "user123" },
+      hr: { username: "hr", password: "hr123" },
+    };
     const matched =
       (loginU === ACCOUNTS.new.username && loginP === ACCOUNTS.new.password && "new") ||
       (loginU === ACCOUNTS.user.username && loginP === ACCOUNTS.user.password && "user") ||
       (loginU === ACCOUNTS.hr.username && loginP === ACCOUNTS.hr.password && "hr") ||
       "";
+
     if (!matched) return alert("Invalid username or password.");
     setAuth({ loggedIn: true, role: matched, who: loginU });
   }
-  function logout() {
-    setAuth({ loggedIn: false, role: "", who: "" });
-    setLoginU("");
-    setLoginP("");
-    setOnbComplete(false);
-    setCreatedCredentials(null);
-  }
+
 
   // ---------- Onboarding ----------
   const EDUCATION_LEVELS = ["High School", "Diploma", "Bachelor", "Master", "PhD"];
@@ -263,6 +322,7 @@ export default function App() {
     return true;
   }
 
+  // createUserOnBackend: sends onboarding payload to backend create_user
   async function createUserOnBackend(payload) {
     const url = "http://127.0.0.1:5000/create_user";
     try {
@@ -274,7 +334,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) {
         console.warn("Backend create_user returned error:", data);
-        throw new Error(data.error || "Backend error");
+        return { success: false, error: data };
       }
       return { success: true, data };
     } catch (err) {
@@ -283,9 +343,12 @@ export default function App() {
     }
   }
 
+  // submitOnboarding: replace the payload line with a proper spread and rest stays the same
   async function submitOnboarding() {
     if (!validateOnboarding()) return;
+    // FIX: use spread operator to send full onboarding object
     const payload = { ...onb };
+
     try {
       const result = await createUserOnBackend(payload);
       if (result.success && result.data) {
@@ -305,6 +368,7 @@ export default function App() {
         setOnbComplete(true);
         return;
       } else {
+        // fallback local creation if backend returned an error
         const username = sanitizeUsername(onb.preferredUsername);
         const password = onb.preferredPassword;
         const email = `${username}@gmail.com`;
@@ -331,6 +395,7 @@ export default function App() {
       alert("Unexpected error; created account locally and logged you in.");
     }
   }
+
 
   // helper for showing icons
   function FieldIcon({ field }) {
@@ -768,7 +833,7 @@ export default function App() {
       )}
 
       <footer style={{ padding: 24, fontSize: 12, color: "#64748b", textAlign: "center" }}>
-        Frontend-only demo. Your data stays in the browser. No external libraries.
+        Welcome to the system!
       </footer>
     </div>
   );
@@ -1078,6 +1143,7 @@ function ScreenerApp() {
         id: "R-003",
         name: "Chong Wei Lim",
         email: "cw.lim@example.com",
+        ic: "060516-07-0195",
         phone: "+60-13-9988776",
         location: "Ipoh",
         yearsExp: 1,
