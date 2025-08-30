@@ -8,76 +8,36 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///company.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# -----------------------------
 # 数据模型
-# -----------------------------
 class Candidate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     ic_number = db.Column(db.String(50), nullable=False, unique=True)
     position = db.Column(db.String(100), nullable=False)
-    languages = db.Column(db.String(100), nullable=False)
-    areaExperts = db.Column(db.String(200), nullable=False)
+    languages = db.Column(db.String(15), nullable=False)
+    areaExperts = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=True)
     mentor = db.Column(db.String(100), nullable=True)
 
+# 数据模型
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     employee_name = db.Column(db.String(100), nullable=False)
     feedback_text = db.Column(db.Text, nullable=False)
 
+# 数据模型 (To-Do)
 class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    employee_name = db.Column(db.String(100), nullable=False)
-    task = db.Column(db.String(255), nullable=False)
-    is_completed = db.Column(db.Boolean, default=False)
-    due_date = db.Column(db.DateTime, nullable=True)
+    employee_name = db.Column(db.String(100), nullable=False)   # 员工名字
+    task = db.Column(db.String(255), nullable=False)            # 待办事项
+    is_completed = db.Column(db.Boolean, default=False)         # 是否完成
+    due_date = db.Column(db.DateTime, nullable=True)            # 截止日期
 
 with app.app_context():
     db.create_all()
 
-# -----------------------------
-# 登录 & 创建用户
-# -----------------------------
-USERS = {
-    "new": {"username": "new", "password": "new123", "role": "new"},
-    "user": {"username": "user", "password": "user123", "role": "user"},
-    "hr": {"username": "hr", "password": "hr123", "role": "hr"},
-}
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-
-    user = USERS.get(username)
-    if not user or user["password"] != password:
-        return jsonify({"error": "Invalid username or password"}), 401
-
-    return jsonify({"username": user["username"], "role": user["role"]}), 200
-
-@app.route("/create_user", methods=["POST"])
-def create_user():
-    data = request.get_json()
-    username = data.get("preferredUsername")
-    password = data.get("preferredPassword")
-    email = f"{username}@gmail.com"
-
-    return jsonify({
-        "username": username,
-        "password": password,
-        "email": email,
-        "assignedMentor": {
-            "name": "Dr. Sarah Tan",
-            "email": "sarah.tan@company.com",
-            "dept": "AI & SWE"
-        }
-    }), 201
-
-# -----------------------------
-# 候选人 API
-# -----------------------------
+# API 1: 添加候选人
 @app.route("/add_candidate", methods=["POST"])
 def add_candidate():
     data = request.get_json()
@@ -96,75 +56,56 @@ def add_candidate():
         return jsonify({"error": "Candidate already exists"}), 400
 
     email = f"{email_prefix}@company.com"
-    new_candidate = Candidate(
-        name=name,
-        ic_number=ic_number,
-        position=position,
-        email=email,
-        languages=languages,
-        areaExperts=areaExperts
-    )
+    new_candidate = Candidate(name=name, ic_number=ic_number, position=position, email=email, languages=languages, areaExperts=areaExperts)
     db.session.add(new_candidate)
     db.session.commit()
 
     return jsonify({
         "message": f"Candidate {name} added successfully.",
-        "candidate": {
-            "name": name,
-            "ic_number": ic_number,
-            "position": position,
-            "email": email,
-            "languages": languages,
-            "areaExperts": areaExperts
-        }
+        "candidate": {"name" : name, "ic_number" : ic_number, "position" : position, "email" : email, "languages" : languages, "areaExperts" : areaExperts}
     })
 
-# -----------------------------
-# 分配导师
-# -----------------------------
+# API 2: 分配导师
+
 mentors = {
-    "Alice": {
-        "roles": ["Software Engineer"],
-        "languages": ["Python", "C++", "Java"],
-        "areaExperts": ["Web", "Backend"],
-        "email": ["alice123@npc.com"]
-    },
-    "Bob": {
-        "roles": ["Data Scientist"],
-        "languages": ["Python", "R", "SQL"],
-        "areaExperts": ["AI", "Machine Learning"],
-        "email": ["bobatea@npc.com"]
-    },
-    "Charlie": {
-        "roles": ["Firmware Engineer"],
-        "languages": ["C", "C++"],
-        "areaExperts": ["Embedded Systems", "Hardware Interface", "Device Drivers"],
-        "email": ["charlieputh.fake@npc.com"]
-    }
+    "Alice" : {"roles" : ["Software Engineer"], "languages" : ["Python", "C++", "Java"], "areaExperts" : ["Web", "Backend"], "email" : ["alice123@npc.com"]},
+    "Bob" : {"roles" : ["Data Scientist"], "languages" : ["Python", "R", "SQL"], "areaExperts" : ["AI", "Machine Language"], "email" : ["bobatea@npc.com"]},
+    "Charlie" : {"roles" : ["Firmware Engineer"], "languages" : ["C", "C++"], "areaExperts" : ["Embedded Systems", "Hardware Interface", "Device Drivers"], "email" : ["charlieputh.fake@npc.com"]}
 }
 
 def match_mentor(candidate):
     best_match = None
     max_score = -1
     
-    candidate_langs = [s.strip() for s in candidate.languages.split(",")]
-    candidate_areas = [s.strip() for s in candidate.areaExperts.split(",")]
+    candidate_langs = [s.strip() for s in candidate.programming_languages.split(",")]
+    candidate_areas = [s.strip() for s in candidate.area_expertise.split(",")]
 
     for name, info in mentors.items():
         score = 0
+        
+        # 职位匹配
         if candidate.position in info["roles"]:
             score += 1
-        score += len(set(candidate_langs) & set(info["languages"]))
-        score += len(set(candidate_areas) & set(info["areaExperts"]))
+        
+        # 编程语言匹配
+        if candidate_langs:
+            lang_match = len(set(candidate_langs) & set(info["programming_languages"]))
+            score += lang_match
+        
+        # 领域匹配
+        area_match = len(set(candidate_areas) & set(info["area_expertise"]))
+        score += area_match
         
         if score > max_score:
             max_score = score
             best_match = name
 
+    # 如果 max_score <= 0，随机挑一个 mentor
     if max_score <= 0:
         best_match = random.choice(list(mentors.keys()))
 
     return best_match
+
 
 @app.route("/assign_mentor", methods=["POST"])
 def assign_mentor():
@@ -186,19 +127,10 @@ def assign_mentor():
 
     return jsonify({
         "message": f"Mentor {mentor} assigned to {candidate.name}.",
-        "candidate": {
-            "name": candidate.name,
-            "position": candidate.position,
-            "languages": candidate.languages,
-            "areaExperts": candidate.areaExperts,
-            "mentor": mentor,
-            "mentor_email": mentor_email
-        }
+        "candidate": {"name": candidate.name, "position": candidate.position, "languages" : candidate.languages, "areaExperts" : candidate.areaExperts,"mentor": mentor, "mentor_email" : mentor_email}
     })
 
-# -----------------------------
-# 核对候选人
-# -----------------------------
+# API 3: 核对注册账号是否匹配
 @app.route("/verify_candidate", methods=["POST"])
 def verify_candidate():
     data = request.get_json()
@@ -217,8 +149,18 @@ def verify_candidate():
         "candidate": {"name": candidate.name, "position": candidate.position, "email": candidate.email}
     })
 
+# 数据模型
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    employee_name = db.Column(db.String(100), nullable=False)
+    feedback_text = db.Column(db.Text, nullable=False)
+
+# 初始化数据库
+with app.app_context():
+    db.create_all()
+
 # -----------------------------
-# Feedback API
+# API 1: 提交反馈
 # -----------------------------
 @app.route("/submit_feedback", methods=["POST"])
 def submit_feedback():
@@ -245,6 +187,9 @@ def submit_feedback():
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
 
+# -----------------------------
+# API 2: 获取所有反馈
+# -----------------------------
 @app.route("/get_feedbacks", methods=["GET"])
 def get_feedbacks():
     try:
@@ -261,9 +206,19 @@ def get_feedbacks():
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
 
-# -----------------------------
-# To-Do API
-# -----------------------------
+# --------------------------------------------------------------------------------------------------------------------------
+# 数据模型 (To-Do)
+class Todo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    employee_name = db.Column(db.String(100), nullable=False)   # 员工名字
+    task = db.Column(db.String(255), nullable=False)            # 待办事项
+    is_completed = db.Column(db.Boolean, default=False)         # 是否完成
+    due_date = db.Column(db.DateTime, nullable=True)            # 截止日期
+
+with app.app_context():
+    db.create_all()
+
+# API 1: 添加 To-Do
 @app.route("/add_todo", methods=["POST"])
 def add_todo():
     try:
@@ -282,7 +237,11 @@ def add_todo():
             except ValueError:
                 return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
 
-        new_todo = Todo(employee_name=employee_name, task=task, due_date=due_date_obj)
+        new_todo = Todo(
+            employee_name=employee_name,
+            task=task,
+            due_date=due_date_obj
+        )
         db.session.add(new_todo)
         db.session.commit()
 
@@ -299,6 +258,8 @@ def add_todo():
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
 
+
+# API 2: 获取员工所有 To-Do
 @app.route("/get_todos/<employee_name>", methods=["GET"])
 def get_todos(employee_name):
     try:
@@ -316,6 +277,8 @@ def get_todos(employee_name):
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
 
+
+# API 3: 更新 To-Do 状态 (完成/未完成)
 @app.route("/update_todo/<int:todo_id>", methods=["PUT"])
 def update_todo(todo_id):
     try:
@@ -327,13 +290,16 @@ def update_todo(todo_id):
         todo.is_completed = data.get("is_completed", todo.is_completed)
         db.session.commit()
 
-        return jsonify({
-            "message": "To-Do updated successfully.",
-            "todo": {"id": todo.id, "task": todo.task, "is_completed": todo.is_completed}
-        }), 200
+        return jsonify({"message": "To-Do updated successfully.", "todo": {
+            "id": todo.id,
+            "task": todo.task,
+            "is_completed": todo.is_completed
+        }}), 200
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
 
+
+# API 4: 删除 To-Do
 @app.route("/delete_todo/<int:todo_id>", methods=["DELETE"])
 def delete_todo(todo_id):
     try:
@@ -346,14 +312,12 @@ def delete_todo(todo_id):
         return jsonify({"message": f"To-Do {todo_id} deleted successfully."}), 200
     except Exception as error:
         return jsonify({"error": "Server error", "details": str(error)}), 500
-
-# -----------------------------
-# 首页
-# -----------------------------
+    
 @app.route("/")
 def index():
     return jsonify({"message": "Backend API is running!"}), 200
 
-# -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
