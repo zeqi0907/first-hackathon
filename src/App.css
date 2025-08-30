@@ -80,14 +80,3 @@
   border-bottom-left-radius: 20px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.2);
 }
-
-/* Right: Image */
-.login-right {
-  flex: 1; /* take half width */
-  background-image: url("/backgroundpic.jpg"); /* keep it in public folder */
-  background-size: cover;
-  background-position: center;
-  opacity: 0.7; /* make picture transparent */
-  border-radius: 15px; /* round picture corners */
-  margin: 20px; /* optional: space from window edges */
-}
