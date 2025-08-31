@@ -21,6 +21,8 @@ The backend architecture is built from python and flask using RESTful framework.
 The frontend architecture is built upon CSS, HTML and Javascript for rapid develpoment. We have also REACT library to build the user interface for our website
 
 ## Setup instrcuctions
+Please download both the front end and back end folder in order to run the whole system
+To run the whole system, please type this two command in the command prompt to activate both the front end and the backend
 
 
 ## Reflection on challenges and learnings
