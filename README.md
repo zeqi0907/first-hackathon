@@ -14,10 +14,10 @@ Hiring of new recruits have always been an important and crucial part for a comp
 - A productive kit tool to help employees be productive from day 1
 
 ## Technology Stack used
-### 'Backend'
+### Backend
 The backend architecture is built from python and flask using RESTful framework. We have also chosen SQLite as our database for a lightweight and highly optimized databse.
 
-### 'Frontend'
+### Frontend
 The frontend architecture is built upon CSS, HTML and Javascript for rapid develpoment. We have also REACT library to build the user interface for our website
 
 ## Setup instrcuctions
