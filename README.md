@@ -23,9 +23,9 @@ The frontend architecture is built upon CSS, HTML and Javascript for rapid devel
 ## Setup instrcuctions
 Please download both the front end and back end folder in order to run the whole system
 To run the whole system, please type this two command in the command prompt to activate both the front end and the backend
-### **npm start **
+### **npm start**
 This is to start and activate the front end
-### **app.py **
+### **app.py**
 This is to start and activate the back end
 After this, just enter the website through this link and you're ready to go.
 ### **first-hackathon-taupe.vercel.app**
